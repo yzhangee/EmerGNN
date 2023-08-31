@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# vscode
+.vs
+.vscode
+
+# Pycharm
+.idea
+
+# vim
+.*.swp
+
+# DS_Store (MacOS)
+.DS_Store
