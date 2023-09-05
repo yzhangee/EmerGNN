@@ -15,19 +15,33 @@ conda install https://anaconda.org/conda-forge/cudatoolkit-dev/11.3.1/download/l
 pip install -r requirements.txt
 ```
 
+
+
 ## Running scripts
-To tune hyperparameters or reproduce the results, firstly cd into the corresponding directory, i.e., DrugBank or TWOSIDES, then run the following scripts:
 
-Hyperparameter tuning:
+First `cd` into the corresponding directory, i.e., DrugBank or TWOSIDES. 
+
+Our data is uploaded on the [one drive link](https://hkustconnect-my.sharepoint.com/:f:/g/personal/yzhangee_connect_ust_hk/Elpl9vADdy9Hn9i-IUiruvQB3vNaKjITos5KSXr76coWOg?e=YOBUZf). Download `data-DB.zip` into the DrugBank file folder or `data-TS.zip` for TWOSIDES file folder. Then, unzip the compressed data to get a folder with name `data` for use.
+
+
+
+Once the data is ready, you can run the following scripts to reproduce the results:
+
 ```
-python -W ignore tune_hyperms.py --dataset=emerging --n_epoch=20 --epoch_per_test=2 --gpu=0
+python -W ignore evaluate.py --dataset=S1_1 --n_epoch=40 --epoch_per_test=2 --gpu=0
 ```
 
-Evaluation:
+The three settings, i.e. (S0) interaction between exsiting drugs, (S1) interaction between emerging drug and existing drug, and (S2) interaction between emerging drugs, are provided. The datasets for S1 and S2 settings are created by ourself, while the S0 setting uses the original dataset from SumGNN (Yu et. al. 2021).
+
+
+
+You can also try the following script for hyper-parameter tuning, which may lead to even better performance.
+
 ```
-python -W ignore evaluate.py --dataset=emerging --n_epoch=40 --epoch_per_test=2 --gpu=0
+python -W ignore tune_hyperms.py --dataset=S1_1 --n_epoch=20 --epoch_per_test=2 --gpu=0
 ```
 
-The emerging file contains datasets used for prediction between emerging and existing drugs, while the existing file contains datasets used in SumGNN (Yu et. al. 2021) for prediction between existing drugs.
+
 
 In our environment, results of both datasets in one round can be obtained within 1 day. Running on TWOSIDES can be faster than DrugBank since TWOSIDES is smaller.
+
