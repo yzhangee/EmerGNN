@@ -4,6 +4,7 @@ import numpy as np
 import torch.nn as nn
 
 from utils import batch_by_size
+from tqdm import tqdm
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torch.optim import Adam
 from models import EmerGNN
@@ -39,7 +40,8 @@ class BaseModel(object):
         n_batch = self.args.n_batch
 
         self.model.train()
-        for p_h, p_t, p_r, n_h, n_t, n_r in batch_by_size(n_batch, pos_head, pos_tail, pos_label, neg_head, neg_tail, neg_label, n_sample=n_train):
+        for p_h, p_t, p_r, n_h, n_t, n_r in tqdm(batch_by_size(n_batch, pos_head, pos_tail, pos_label, neg_head, neg_tail, neg_label, n_sample=n_train), 
+                ncols=100, leave=False, total=len(pos_head)//n_batch+int(len(pos_head)%n_batch>0)):
             self.model.zero_grad()
             p_scores = torch.sigmoid(self.model.enc_r(self.model.enc_ht(p_h, p_t, KG)))
             n_scores = torch.sigmoid(self.model.enc_r(self.model.enc_ht(n_h, n_t, KG)))
@@ -93,6 +95,8 @@ class BaseModel(object):
         for r in range(self.eval_rel):
             label = pred_class[r]['label']
             score = pred_class[r]['score']
+            if len(label)==0:
+                continue
             sort_label = np.array(sorted(zip(score, label), reverse=True))
             roc_auc.append(roc_auc_score(label, score))
             prc_auc.append(average_precision_score(label, score))

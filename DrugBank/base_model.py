@@ -4,6 +4,7 @@ import numpy as np
 import torch.nn.functional as F
 
 from utils import batch_by_size
+from tqdm import tqdm
 from torch.optim import Adam
 from models import EmerGNN
 from sklearn.metrics import f1_score, cohen_kappa_score
@@ -36,7 +37,8 @@ class BaseModel(object):
 
         loss_epoch = 0
         self.model.train()
-        for h, t, r in batch_by_size(n_batch, head, tail, label, n_sample=n_train):
+        for h, t, r in tqdm(batch_by_size(n_batch, head, tail, label, n_sample=n_train),
+            ncols=100, leave=False, total=len(head)//n_batch+int(len(head)%n_batch>0)):
             self.model.zero_grad()
             ht_embed = self.model.enc_ht(h, t, KG)
             scores = self.model.enc_r(ht_embed)

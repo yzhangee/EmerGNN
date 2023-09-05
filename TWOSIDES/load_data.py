@@ -13,7 +13,7 @@ class DataLoader:
         ddi_paths = {
             'train': os.path.join(self.task_dir, 'data/{}/{}_ddi.txt'.format(params.dataset, 'train')),
             'valid': os.path.join(self.task_dir, 'data/{}/{}_ddi.txt'.format(params.dataset, 'valid')),
-            'test':  os.path.join(self.task_dir, 'data/{}/{}_ddi.txt'.format(params.dataset, 'test'))
+            'test':  os.path.join(self.task_dir, 'data/{}/{}_ddi.txt'.format(params.dataset, 'test')),
         }
         kg_paths = {
             'train': os.path.join(self.task_dir, 'data/{}/{}_KG.txt'.format(params.dataset, 'train')),
@@ -139,7 +139,6 @@ class DataLoader:
         self.valid_kg = np.array(valid_kg, dtype='int')
         self.test_kg = np.array(test_kg, dtype='int')
         print("KG triplets: Train-{} Valid-{} Test-{}".format(len(train_kg), len(valid_kg), len(test_kg)))
-        print("ddi in kg:{}".format(len(self.ddi_in_kg)))
 
         self.all_ent = max(self.entity2id.keys()) + 1
         self.all_rel = max(self.relation2id.keys()) + 1
@@ -164,11 +163,11 @@ class DataLoader:
         adjs = torch.sparse_coo_tensor(indices=torch.LongTensor(edges).t(), values=torch.FloatTensor(values), size=torch.Size([self.all_ent, self.all_ent, all_rel+1]), requires_grad=False).cuda()
         return adjs
 
-    def shuffle_train(self, ratio=0.8, shuf_ent=True):
+    def shuffle_train(self, ratio=0.8):
         n_ent = len(self.ddi_in_kg)
         train_ent = set(self.train_ent) - set(np.random.choice(list(self.ddi_in_kg), n_ent-int(n_ent*ratio)))
         all_triplet = np.array(self.pos_triplets['train'])
-        if shuf_ent:
+        if self.dataset.startswith('S1'):
             fact_triplet = []
             self.train_pos = []
             self.train_neg = []
@@ -184,7 +183,23 @@ class DataLoader:
             self.train_pos = np.array(self.train_pos)
             self.train_neg = np.array(self.train_neg)
             self.KG = self.load_graph(fact_triplet, self.train_kg)
-        else:
+        elif self.dataset.startswith('S2'):
+            fact_triplet = []
+            self.train_pos = []
+            self.train_neg = []
+            for i in range(len(all_triplet)):
+                h, t, r = all_triplet[i,0], all_triplet[i,1], all_triplet[i,2:]
+                if h in train_ent and t in train_ent:
+                    for s in np.nonzero(r)[0]:
+                        fact_triplet.append([h, t, s])
+                elif h not in train_ent and t not in train_ent:
+                    self.train_pos.append(self.pos_triplets['train'][i])
+                    self.train_neg.append(self.neg_triplets['train'][i])
+            fact_triplet = np.array(fact_triplet)
+            self.train_pos = np.array(self.train_pos)
+            self.train_neg = np.array(self.train_neg)
+            self.KG = self.load_graph(fact_triplet, self.train_kg)
+        elif self.dataset.startswith('S0'):
             n_all = len(all_triplet)
             rand_idx = np.random.permutation(n_all)
             n_fact = int(n_all * 0.8)

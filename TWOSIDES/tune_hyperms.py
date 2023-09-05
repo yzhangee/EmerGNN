@@ -41,6 +41,9 @@ if __name__ == '__main__':
     valid_pos, valid_neg = torch.LongTensor(pos_triplets['valid']).cuda(), torch.LongTensor(neg_triplets['valid']).cuda()
     test_pos,  test_neg  = torch.LongTensor(pos_triplets['test']).cuda(),  torch.LongTensor(neg_triplets['test']).cuda()
 
+    if not os.path.exists('results'):
+        os.makedirs('results')
+
     def run_model(params):
         random.seed(args.seed)
         np.random.seed(args.seed)
@@ -59,14 +62,14 @@ if __name__ == '__main__':
             for e in range(args.n_epoch):
                 if early_stop > 3:
                     break
-                dataloader.shuffle_train(shuf_ent=params['ent'])
+                dataloader.shuffle_train()
                 KG = dataloader.KG
                 train_pos, train_neg = dataloader.train_pos, dataloader.train_neg
                 model.train(train_pos, train_neg, KG)
                 if (e+1) % args.epoch_per_test == 0:
                     v_roc, v_pr, v_ap = model.evaluate(valid_pos, valid_neg, vKG)
                     t_roc, t_pr, t_ap = model.evaluate(test_pos, test_neg, tKG)
-                    out_str = 'epoch:%d\tfeat:%s lr:%.6f lamb:%.8f n_batch:%d n_dim:%d layer:%d ent:%s,\t%.4f %.4f %.4f\t %.4f %.4f %.4f' % (e+1, args.feat, args.lr, args.lamb, args.n_batch, args.n_dim, args.length, str(params['ent']), v_roc, v_pr, v_ap, t_roc, t_pr, t_ap)
+                    out_str = 'epoch:%d\tfeat:%s lr:%.6f lamb:%.8f n_batch:%d n_dim:%d layer:%d\t%.4f %.4f %.4f\t %.4f %.4f %.4f' % (e+1, args.feat, args.lr, args.lamb, args.n_batch, args.n_dim, args.length, v_roc, v_pr, v_ap, t_roc, t_pr, t_ap)
                     if v_pr > best_acc:
                         best_acc = v_pr
                         best_str = out_str
@@ -88,7 +91,6 @@ if __name__ == '__main__':
         "lamb": hp.choice("lamb", [1e-8, 1e-6, 1e-4, 1e-2]),
         "n_batch": hp.choice("n_batch", [32, 64, 128]),
         "n_dim": hp.choice("n_dim", [32, 64]),
-        "ent": hp.choice("ent", [True, False]),
         "length": hp.choice("length", [2,3,4,5]),
         "feat": hp.choice("feat", ['M', 'E']),
     }

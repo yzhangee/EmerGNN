@@ -133,11 +133,11 @@ class DataLoader:
         adjs = torch.sparse_coo_tensor(indices=torch.LongTensor(edges).t(), values=torch.FloatTensor(values), size=torch.Size([self.all_ent, self.all_ent, 2*self.all_rel+1]), requires_grad=False).cuda()
         return adjs
 
-    def shuffle_train(self, ratio=0.8, shuf_ent=True):
+    def shuffle_train(self, ratio=0.8):
         n_ent = len(self.ddi_in_kg)
         train_ent = set(self.train_ent) - set(np.random.choice(list(self.ddi_in_kg), n_ent-int(n_ent*ratio)))
         all_triplet = np.array(self.triplets['train'])
-        if shuf_ent:
+        if self.dataset.startswith('S1'):
             fact_triplet = []
             train_data = []
             for i in range(len(all_triplet)):
@@ -150,7 +150,20 @@ class DataLoader:
             kg_triplets = np.concatenate([fact_triplet, self.train_kg], axis=0)
             self.KG = self.load_graph(kg_triplets)
             self.train_data = np.array(train_data)
-        else:
+        elif self.dataset.startswith('S2'):
+            fact_triplet = []
+            train_data = []
+            for i in range(len(all_triplet)):
+                h, t, r = all_triplet[i]
+                if h in train_ent and t in train_ent:
+                    fact_triplet.append([h,t,r])
+                elif h not in train_ent and t not in train_ent:
+                    train_data.append([h,t,r])
+            fact_triplet = np.array(fact_triplet)
+            kg_triplets = np.concatenate([fact_triplet, self.train_kg], axis=0)
+            self.KG = self.load_graph(kg_triplets)
+            self.train_data = np.array(train_data)
+        elif self.dataset.startswith('S0'):
             n_all = len(all_triplet)
             rand_idx = np.random.permutation(n_all)
             all_triplet = all_triplet[rand_idx]

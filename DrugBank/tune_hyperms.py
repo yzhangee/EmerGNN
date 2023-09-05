@@ -10,7 +10,7 @@ from hyperopt import fmin, tpe, hp, STATUS_OK, Trials, partial
 
 parser = argparse.ArgumentParser(description="Parser for EmerGNN")
 parser.add_argument('--task_dir', type=str, default='./', help='the directory to dataset')
-parser.add_argument('--dataset', type=str, default='emerging', help='the dataset to use')
+parser.add_argument('--dataset', type=str, default='S1_1', help='the dataset to use')
 parser.add_argument('--lamb', type=float, default=7e-4, help='set weight decay value')
 parser.add_argument('--gpu', type=int, default=0, help='GPU id to load.')
 parser.add_argument('--n_dim', type=int, default=128, help='set embedding dimension')
@@ -40,6 +40,9 @@ if __name__ == '__main__':
     valid_pos, valid_neg = torch.LongTensor(triplets['valid']).cuda(), None
     test_pos,  test_neg  = torch.LongTensor(triplets['test']).cuda(), None
 
+    if not os.path.exists('results'):
+        os.makedirs('results')
+
     def run_model(params):
         random.seed(args.seed)
         np.random.seed(args.seed)
@@ -58,7 +61,7 @@ if __name__ == '__main__':
             for e in range(args.n_epoch):
                 if early_stop > 3:
                     break
-                dataloader.shuffle_train(shuf_ent=True)
+                dataloader.shuffle_train()
                 KG = dataloader.KG
                 train_pos = torch.LongTensor(dataloader.train_data).cuda()
                 model.train(train_pos, None, KG)
